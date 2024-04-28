@@ -1,0 +1,151 @@
+CREATE DATABASE asgn2newnew;
+USE asgn2newnew;
+CREATE TABLE test_table (
+    RecordNumber int(3),
+    CurrentDate Date
+);
+DELIMITER //
+CREATE PROCEDURE InsertRecords()
+BEGIN
+    DECLARE v_record_number INT;
+    DECLARE v_current_date DATE;
+    SET v_record_number = 1;
+    WHILE v_record_number <= 50 DO
+        SET v_current_date = SYSDATE(); 
+        INSERT INTO test_table (RecordNumber, CurrentDate)
+        VALUES (v_record_number, v_current_date);
+        SET v_record_number = v_record_number + 1;
+    END WHILE;
+END //
+DELIMITER ;
+CALL InsertRecords();
+select * from test_table;
+
+
+CREATE TABLE products (
+    ProductID INT(4),
+    Category CHAR(3),
+    Detail VARCHAR(30),
+    Price DECIMAL(10,2),
+    Stock INT(5)
+);
+INSERT INTO products (ProductID, Category, Detail, Price, Stock)
+VALUES
+(1, 'A', 'ProductA', 10.00, 100),
+(2, 'B', 'ProductB', 20.00, 150),
+(3, 'A', 'ProductC', 15.50, 80),
+(4, 'C', 'ProductD', 30.00, 120),
+(5, 'B', 'ProductE', 25.75, 200);
+SELECT * FROM products;
+DELIMITER //
+CREATE PROCEDURE UpdatePriceForCategory3(IN X DECIMAL(5,2), IN Y CHAR(3))
+BEGIN
+    UPDATE products
+    SET Price = Price * (2 + (X / 100))
+    WHERE Category = Y AND ProductID IS NOT NULL;
+END //
+DELIMITER ;
+CALL UpdatePriceForCategory3(10, 'A');
+SELECT * FROM products;
+
+-- Object Relational Databases
+
+-- Create a table to store names
+CREATE TABLE ObjectTable (
+    name VARCHAR(50)
+);
+-- Create a function to count the number of words in a given name
+DELIMITER //
+CREATE FUNCTION countNoOfWords(input_name VARCHAR(50))
+RETURNS INT
+DETERMINISTIC
+NO SQL
+BEGIN
+    DECLARE word_count INT;
+    DECLARE pos INT DEFAULT 1;
+    DECLARE name_length INT;
+    SET name_length = LENGTH(input_name);
+    SET word_count = 0;
+    -- Loop through the name string and count words
+    WHILE pos <= name_length DO
+        -- Skip leading spaces
+        WHILE pos <= name_length AND SUBSTRING(input_name, pos, 1) = ' ' DO
+            SET pos = pos + 1;
+        END WHILE;
+        -- Increment word count if a word is found
+        IF pos <= name_length THEN
+            SET word_count = word_count + 1;
+        END IF;
+        -- Move to the next word
+        WHILE pos <= name_length AND SUBSTRING(input_name, pos, 1) != ' ' DO
+            SET pos = pos + 1;
+        END WHILE;
+    END WHILE;
+    RETURN word_count;
+END
+//
+DELIMITER ;
+
+-- Insert "Walchand User" into the table
+INSERT INTO ObjectTable (name) VALUES ('a');
+
+-- Example usage
+SET @name := 'a';
+SELECT countNoOfWords(@name) AS 'Number of words';
+
+
+-- Create a table to store addresses
+CREATE TABLE AddressTable (
+    address VARCHAR(100),
+    city VARCHAR(50),
+    state VARCHAR(50),
+    pincode VARCHAR(10)
+);
+-- Create a function to extract addresses based on a given keyword
+DELIMITER //
+CREATE FUNCTION extractAddresses1(keyword VARCHAR(100)) 
+RETURNS VARCHAR(4000)
+DETERMINISTIC
+READS SQL DATA
+BEGIN
+    DECLARE extracted_addresses VARCHAR(4000);
+    SET extracted_addresses = '';
+
+    SELECT CONCAT(
+        'Address: ', address, '\n',
+        'City: ', city, '\n',
+        'State: ', state, '\n',
+        'Pincode: ', pincode, '\n\n'
+    )
+    INTO extracted_addresses
+    FROM AddressTable
+    WHERE address LIKE CONCAT('%', keyword, '%')
+       OR city LIKE CONCAT('%', keyword, '%')
+       OR state LIKE CONCAT('%', keyword, '%')
+       OR pincode LIKE CONCAT('%', keyword, '%');
+
+    IF extracted_addresses = '' THEN
+        SET extracted_addresses = 'No addresses found matching the keyword.';
+    END IF;
+
+    RETURN extracted_addresses;
+END;
+//
+DELIMITER ;
+
+-- Create a function to count the number of words in a given field
+DELIMITER //
+CREATE FUNCTION countWords(input_string VARCHAR(100)) 
+RETURNS INT
+DETERMINISTIC
+NO SQL
+BEGIN
+    DECLARE word_count INT;
+    SET word_count = LENGTH(input_string) - LENGTH(REPLACE(input_string, ' ', '')) + 1;
+    RETURN word_count;
+END;
+ //
+DELIMITER ;
+
+SELECT extractAddresses1('New York') AS extracted_addresses;
+SELECT countWords('AdvancedDBMS') AS word_count;
